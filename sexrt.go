@@ -7,12 +7,14 @@ import (
 	"strings"
 )
 
+// Ctx is just a little Context contains regexp successed arguments
 type Ctx struct {
 	Req  *http.Request
 	W    http.ResponseWriter
-	Args map[string]string
+	Args map[string]string // regexp successed arguments
 }
 
+// Use registe the sexrt route handler to "/"
 func Use() {
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -25,6 +27,7 @@ func Use() {
 
 }
 
+// matchRoute find a route which match the request
 func matchRoute(r *http.Request) (function func(*Ctx), args map[string]string) {
 	// parse request arguments
 	paths, method, ext, domain, querys, headers := parseRequest(r)
@@ -43,7 +46,8 @@ func matchRoute(r *http.Request) (function func(*Ctx), args map[string]string) {
 	return
 }
 
-func parseRequest(r *http.Request) (paths []string, method, ext, domain string, querys, headers map[string][]string) {
+// parseRequest parse all need arugments for match route
+func parseRequest(r *http.Request) (paths []string, method, ext, domain string, querys, headers map[string]string) {
 	// get a url.path slice
 	rawPaths := strings.Split(path.Clean(r.URL.Path), "/")
 
@@ -71,15 +75,25 @@ func parseRequest(r *http.Request) (paths []string, method, ext, domain string, 
 	domain = r.Host
 
 	// querys
-	querys = r.URL.Query()
+	querys = make(map[string]string)
+	for i, v := range r.URL.Query() {
+		querys[i] = v[0]
+	}
 
 	// headers
-	headers = r.Header
+	headers = make(map[string]string)
+	for i, v := range r.Header {
+		headers[i] = v[0]
+	}
 
 	return
 }
 
-func isMatch(rt *route, paths []string, method, ext, domain string, querys, headers map[string][]string) (yes bool, args map[string]string) {
+// isMatch check the request is match a route in global route-function map
+func isMatch(rt *route, paths []string, method, ext, domain string, querys, headers map[string]string) (yes bool, args map[string]string) {
+
+	println("+++++++++++++++++++")
+
 	args = make(map[string]string)
 
 	// check paths
@@ -143,19 +157,17 @@ func isMatch(rt *route, paths []string, method, ext, domain string, querys, head
 	// check querys
 	if len(rt.querys) > 0 {
 		for k := range rt.querys {
-			arr, ok := querys[k]
+			v, ok := querys[k]
 			if !ok {
 				return
 			}
-			for i := range arr {
-				y, key, value := isSingleMatch(arr[i], rt.querys[k])
-				if !y {
-					return
-				}
-				// success once
-				if key != "" {
-					args[key] = value
-				}
+			y, key, value := isSingleMatch(rt.querys[k], v)
+			if !y {
+				return
+			}
+			// success once
+			if key != "" {
+				args[key] = value
 			}
 		}
 	}
@@ -163,19 +175,17 @@ func isMatch(rt *route, paths []string, method, ext, domain string, querys, head
 	// check headers
 	if len(rt.headers) > 0 {
 		for k := range rt.headers {
-			arr, ok := headers[k]
+			v, ok := headers[k]
 			if !ok {
 				return
 			}
-			for i := range arr {
-				y, key, value := isSingleMatch(arr[i], rt.headers[k])
-				if !y {
-					return
-				}
-				// success once
-				if key != "" {
-					args[key] = value
-				}
+			y, key, value := isSingleMatch(rt.headers[k], v)
+			if !y {
+				return
+			}
+			// success once
+			if key != "" {
+				args[key] = value
 			}
 		}
 	}
@@ -184,7 +194,11 @@ func isMatch(rt *route, paths []string, method, ext, domain string, querys, head
 	return
 }
 
+// isSingleMatch use "==" or regexp to validate a single argument of request is match or not
 func isSingleMatch(rtArg, reqArg string) (yes bool, key, value string) {
+
+	println("--" + rtArg + "--")
+
 	// use regexp to validate
 	if strings.HasPrefix(rtArg, "{") && strings.HasSuffix(rtArg, "}") {
 		rtArg = strings.TrimLeft(rtArg, "{")

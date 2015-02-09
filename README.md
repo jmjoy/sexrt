@@ -2,13 +2,13 @@
 
 Sexrt is a sexy HTTP router for golang, the design inspiration is origin to gorilla/mux:
 
-http://www.gorillatoolkit.org/pkg/mux
+https://github.com/gorilla/mux
 
 ##Get started
 
 To install:
 
-        go get github.com/jmjoy/sexrt
+    go get github.com/jmjoy/sexrt
 
 Take a try:
 
@@ -32,10 +32,10 @@ func main() {
 }
 ```
 
-Now, you can visit it: http://localhost:8080/index
+Now, you can visit it: [http://localhost:8080/index]( "http://localhost:8080/index")
 
-not only, you also can via http://localhost:8080/index.html or
-http://localhost:8080/index.pdf or ... to visit it
+not only, you also can via [http://localhost:8080/index.html]( "http://localhost:8080/index.html") or
+[http://localhost:8080/index.pdf]( "http://localhost:8080/index.pdf") or ... to visit it
 
 it you don't like the extension, you can do it simply:
 
@@ -57,15 +57,21 @@ sexrt.P("index").E("").F(func(ctx *sexrt.Ctx) {
 
 if you want more url segments, you can do:
 
-    sexrt.P("home", "user", "info").F(whatFunc)
+```go
+sexrt.P("home", "user", "info").F(whatFunc)
+```
 
 or use "chain style":
 
-    sexrt.P("home").P("user").P("info").F(whatFunc)
+```go
+sexrt.P("home").P("user").P("info").F(whatFunc)
+```
 
 many times, you would need to use a regexp to match a url:
 
-    sexrt.P("home").P(`{^\d+$}`).F(whatFunc)
+```go
+sexrt.P("home").P(`{^\d+$}`).F(whatFunc)
+```
 
 the argument surround with `{}` means it use regexp, if you want to save the matched string:
 

@@ -8,30 +8,26 @@ import (
 )
 
 func TestServer(t *testing.T) {
-
 	sexrt.NF(func(ctx *sexrt.Ctx) {
-		fmt.Fprintf(ctx.W, "fuck!!!<br />\n")
-		fmt.Fprintf(ctx.W, "%#v", ctx.Req)
+		fmt.Fprint(ctx.W, "I didn't found!!!")
 	})
 
-	sexrt.P("index").Get().Q("a", `{^\d$}`).F(func(ctx *sexrt.Ctx) {
-		fmt.Fprintf(ctx.W, "%#v\n", ctx)
-		fmt.Fprintf(ctx.W, "%#v\n", ctx.Args)
+	sexrt.P("home").P("user", `{name:^\w{3,5}$}`).
+		M("GET").M("POST", "PUT").
+		E("html").E("xml", "pdf").
+		D(`{domain:^.*$}`).
+		Q("a", "1").Q("b", `{^b$}`).Q("c", `{c:^\d+$}`).
+		H("Accept", `{html}`).
+		F(func(ctx *sexrt.Ctx) {
+
+		fmt.Fprint(ctx.W, ctx.Args)
 	})
 
-	sexrt.P("accept").Get().H("Accept", `{accept:html}`).F(func(ctx *sexrt.Ctx) {
-		fmt.Fprintf(ctx.W, "%#v\n", ctx)
-		fmt.Fprintf(ctx.W, "%#v\n", ctx.Args)
-	})
-
-	sexrt.Use()
-
-	fmt.Println("rtFuncMap. Len: ", len(sexrt.RouteFuncMap()), "\n")
-
-	rm := sexrt.RouteFuncMap()
-	for i := range rm {
+	for i := range sexrt.RouteFuncMap() {
 		fmt.Println(i)
 	}
+
+	sexrt.Use()
 
 	http.ListenAndServe(":8080", nil)
 }

@@ -47,7 +47,7 @@ func matchRoute(r *http.Request) (function func(*Ctx), args map[string]string) {
 }
 
 // parseRequest parse all need arugments for match route
-func parseRequest(r *http.Request) (paths []string, method, ext, domain string, querys, headers map[string]string) {
+func parseRequest(r *http.Request) (paths []string, method, ext, domain string, querys, headers map[string][]string) {
 	// get a url.path slice
 	rawPaths := strings.Split(path.Clean(r.URL.Path), "/")
 
@@ -75,22 +75,16 @@ func parseRequest(r *http.Request) (paths []string, method, ext, domain string, 
 	domain = r.Host
 
 	// querys
-	querys = make(map[string]string)
-	for i, v := range r.URL.Query() {
-		querys[i] = v[0]
-	}
+	querys = r.URL.Query()
 
 	// headers
-	headers = make(map[string]string)
-	for i, v := range r.Header {
-		headers[i] = v[0]
-	}
+	headers = r.Header
 
 	return
 }
 
 // isMatch check the request is match a route in global route-function map
-func isMatch(rt *route, paths []string, method, ext, domain string, querys, headers map[string]string) (yes bool, args map[string]string) {
+func isMatch(rt *route, paths []string, method, ext, domain string, querys, headers map[string][]string) (yes bool, args map[string]string) {
 
 	println("+++++++++++++++++++")
 
@@ -114,79 +108,36 @@ func isMatch(rt *route, paths []string, method, ext, domain string, querys, head
 
 	// check method
 	if len(rt.methods) > 0 {
-		for i := range rt.methods {
-			y, key, value := isSingleMatch(rt.methods[i], method)
-			if !y {
-				return
-			}
-			// success once
-			if key != "" {
-				args[key] = value
-			}
+		if !isSliceMatch(rt.methods, method, args) {
+			return
 		}
 	}
 
 	// check extension
 	if len(rt.exts) > 0 {
-		for i := range rt.exts {
-			y, key, value := isSingleMatch(rt.exts[i], ext)
-			if !y {
-				return
-			}
-			// success once
-			if key != "" {
-				args[key] = value
-			}
+		if !isSliceMatch(rt.exts, ext, args) {
+			return
 		}
 	}
 
 	// check domain
 	if len(rt.domains) > 0 {
-		for i := range rt.domains {
-			y, key, value := isSingleMatch(rt.domains[i], domain)
-			if !y {
-				return
-			}
-			// success once
-			if key != "" {
-				args[key] = value
-			}
+		if !isSliceMatch(rt.domains, domain, args) {
+			return
 		}
 	}
 
 	// check querys
 	if len(rt.querys) > 0 {
-		for k := range rt.querys {
-			v, ok := querys[k]
-			if !ok {
-				return
-			}
-			y, key, value := isSingleMatch(rt.querys[k], v)
-			if !y {
-				return
-			}
-			// success once
-			if key != "" {
-				args[key] = value
-			}
+		if !isMapMatch(rt.querys, querys, args) {
+			return
 		}
 	}
 
 	// check headers
 	if len(rt.headers) > 0 {
-		for k := range rt.headers {
-			v, ok := headers[k]
-			if !ok {
-				return
-			}
-			y, key, value := isSingleMatch(rt.headers[k], v)
-			if !y {
-				return
-			}
-			// success once
-			if key != "" {
-				args[key] = value
-			}
+		if !isMapMatch(rt.headers, headers, args) {
+			return
 		}
 	}
 
@@ -197,7 +148,7 @@ func isMatch(rt *route, paths []string, method, ext, domain string, querys, head
 // isSingleMatch use "==" or regexp to validate a single argument of request is match or not
 func isSingleMatch(rtArg, reqArg string) (yes bool, key, value string) {
 
-	println("--" + rtArg + "--")
+	println("--" + reqArg + "---" + rtArg + "--")
 
 	// use regexp to validate
 	if strings.HasPrefix(rtArg, "{") && strings.HasSuffix(rtArg, "}") {
@@ -232,4 +183,46 @@ func isSingleMatch(rtArg, reqArg string) (yes bool, key, value string) {
 	// common validate
 	yes = rtArg == reqArg
 	return
+}
+
+// isSliceMatch check if one item in the route is the request argument
+func isSliceMatch(slice []string, single string, args map[string]string) bool {
+	for i := range slice {
+		if y, key, value := isSingleMatch(slice[i], single); y {
+			// success, has one item match
+			if key != "" {
+				args[key] = value
+			}
+			return true
+		}
+
+	}
+	// failed
+	return false
+}
+
+// isMapMatch check if all map key of route are exists in request map , and at most one item of value(slice) is match the route
+func isMapMatch(rtMap map[string]string, reqMap map[string][]string, args map[string]string) bool {
+	// use to count the success counts
+	flag := 0
+roop:
+	for k := range rtMap {
+		slice, ok := reqMap[k]
+		if !ok {
+			return false
+		}
+		for i := range slice {
+			if y, key, value := isSingleMatch(rtMap[k], slice[i]); y {
+				// success, has one item match
+				if key != "" {
+					args[key] = value
+				}
+				flag++
+				continue roop
+			}
+		}
+	}
+
+	// success or not
+	return flag == len(rtMap)
 }

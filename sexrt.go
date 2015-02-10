@@ -85,9 +85,6 @@ func parseRequest(r *http.Request) (paths []string, method, ext, domain string, 
 
 // isMatch check the request is match a route in global route-function map
 func isMatch(rt *route, paths []string, method, ext, domain string, querys, headers map[string][]string) (yes bool, args map[string]string) {
-
-	println("+++++++++++++++++++")
-
 	args = make(map[string]string)
 
 	// check paths
@@ -147,9 +144,6 @@ func isMatch(rt *route, paths []string, method, ext, domain string, querys, head
 
 // isSingleMatch use "==" or regexp to validate a single argument of request is match or not
 func isSingleMatch(rtArg, reqArg string) (yes bool, key, value string) {
-
-	println("--" + reqArg + "---" + rtArg + "--")
-
 	// use regexp to validate
 	if strings.HasPrefix(rtArg, "{") && strings.HasSuffix(rtArg, "}") {
 		rtArg = strings.TrimLeft(rtArg, "{")

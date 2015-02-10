@@ -37,7 +37,7 @@ Now, you can visit it: [http://localhost:8080/index]( "http://localhost:8080/ind
 not only, you also can via [http://localhost:8080/index.html]( "http://localhost:8080/index.html") or
 [http://localhost:8080/index.pdf]( "http://localhost:8080/index.pdf") or ... to visit it
 
-it you don't like the extension, you can do it simply:
+if you don't like the extension, you can do it simply:
 
 ```go
 sexrt.Path("index").Get().Ext("").Func(func(ctx *sexrt.Ctx) {
@@ -66,6 +66,7 @@ or use "chain style":
 ```go
 sexrt.P("home").P("user").P("info").F(whatFunc)
 ```
+[http://localhost:8080/home/user/info]( "http://localhost:8080/home/user/info")
 
 many times, you would need to use a regexp to match a url:
 
@@ -120,6 +121,4 @@ sexrt.NF(nfFunc)
 
 ##Reference
 
-example:  http://xxx
-
-document: http://xxx
+https://godoc.org/?q=github.com%2Fjmjoy%2Fsexrt

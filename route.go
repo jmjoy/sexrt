@@ -6,7 +6,7 @@ import (
 )
 
 // route is actually a queue for matching a request
-type route struct {
+type Route struct {
 	paths   []string          // request.URL splits by "/", like "/hello/world" => ["hello", "world"]
 	methods []string          // request Method, like "GET", "POST", "PUT", "DELETE"
 	exts    []string          // url extension , like "html", "jpg", "pdf"
@@ -16,15 +16,15 @@ type route struct {
 }
 
 // routeFuncMap is the global map for route and function mapping
-var routeFuncMap = make(map[*route]func(*Ctx))
+var routeFuncMap = make(map[*Route]func(*Ctx))
 
 // RouteFuncMap return the golbal map routeFuncMap
-func RouteFuncMap() map[*route]func(*Ctx) {
+func RouteFuncMap() map[*Route]func(*Ctx) {
 	return routeFuncMap
 }
 
 // String make route implements Stringer interface
-func (this *route) String() string {
+func (this *Route) String() string {
 	var str string
 	str += fmt.Sprintf("paths: %v\n", this.paths)
 	str += fmt.Sprintf("methods: %v\n", this.methods)
@@ -59,49 +59,49 @@ func NF(function func(ctx *Ctx)) {
 // ----------------------------------------------------------------------------
 
 // Path add some url segment to a building route, the order is important
-func (this *route) Path(s ...string) *route {
+func (this *Route) Path(s ...string) *Route {
 	this.paths = append(this.paths, s...)
 	return this
 }
 
 // Method add some reqeust method to a building route
-func (this *route) Method(s ...string) *route {
+func (this *Route) Method(s ...string) *Route {
 	this.methods = append(this.methods, s...)
 	return this
 }
 
 // Get is same as route.Method("GET")
-func (this *route) Get() *route {
+func (this *Route) Get() *Route {
 	this.methods = append(this.methods, "GET")
 	return this
 }
 
 // Post is same as route.Method("POST")
-func (this *route) Post() *route {
+func (this *Route) Post() *Route {
 	this.methods = append(this.methods, "POST")
 	return this
 }
 
 // Put is same as route.Method("PUT")
-func (this *route) Put() *route {
+func (this *Route) Put() *Route {
 	this.methods = append(this.methods, "PUT")
 	return this
 }
 
 // DELETE is same as route.Method("DELETE")
-func (this *route) Delete() *route {
+func (this *Route) Delete() *Route {
 	this.methods = append(this.methods, "DELETE")
 	return this
 }
 
 // Ext add some url extension to a building route
-func (this *route) Ext(s ...string) *route {
+func (this *Route) Ext(s ...string) *Route {
 	this.exts = append(this.exts, s...)
 	return this
 }
 
 // Query add some url query argument pair to a building route
-func (this *route) Query(key, value string) *route {
+func (this *Route) Query(key, value string) *Route {
 	if this.querys == nil {
 		this.querys = make(map[string]string)
 	}
@@ -110,13 +110,13 @@ func (this *route) Query(key, value string) *route {
 }
 
 // Domain add some host name to a building route
-func (this *route) Domain(s ...string) *route {
+func (this *Route) Domain(s ...string) *Route {
 	this.domains = append(this.domains, s...)
 	return this
 }
 
 // Header add some request header pair to a building route
-func (this *route) Header(key, value string) *route {
+func (this *Route) Header(key, value string) *Route {
 	if this.headers == nil {
 		this.headers = make(map[string]string)
 	}
@@ -125,7 +125,7 @@ func (this *route) Header(key, value string) *route {
 }
 
 // Func will always copy the route and registe it into global route-function map
-func (this *route) Func(function func(*Ctx)) {
+func (this *Route) Func(function func(*Ctx)) {
 	newRoute := *this
 	routeFuncMap[&newRoute] = function
 }
@@ -135,72 +135,72 @@ func (this *route) Func(function func(*Ctx)) {
 // ----------------------------------------------------------------------------
 
 // Path add some url segment to a new route, the order is important
-func Path(s ...string) *route {
-	this := new(route)
+func Path(s ...string) *Route {
+	this := new(Route)
 	this.paths = append(this.paths, s...)
 	return this
 }
 
 // Method add some reqeust method to a new route
-func Method(s ...string) *route {
-	this := new(route)
+func Method(s ...string) *Route {
+	this := new(Route)
 	this.methods = append(this.methods, s...)
 	return this
 }
 
 // Get is same as Method("GET")
-func Get() *route {
-	this := new(route)
+func Get() *Route {
+	this := new(Route)
 	this.methods = append(this.methods, "GET")
 	return this
 }
 
 // Post is same as Method("POST")
-func Post() *route {
-	this := new(route)
+func Post() *Route {
+	this := new(Route)
 	this.methods = append(this.methods, "POST")
 	return this
 }
 
 // Put is same as Method("PUT")
-func Put() *route {
-	this := new(route)
+func Put() *Route {
+	this := new(Route)
 	this.methods = append(this.methods, "PUT")
 	return this
 }
 
 // Delete is same as Method("DELETE")
-func Delete() *route {
-	this := new(route)
+func Delete() *Route {
+	this := new(Route)
 	this.methods = append(this.methods, "DELETE")
 	return this
 }
 
 // Ext add some url extension to a new route
-func Ext(s ...string) *route {
-	this := new(route)
+func Ext(s ...string) *Route {
+	this := new(Route)
 	this.exts = append(this.exts, s...)
 	return this
 }
 
 // Query add some url query argument pair to a new route
-func Query(key, value string) *route {
-	this := new(route)
+func Query(key, value string) *Route {
+	this := new(Route)
 	this.querys = make(map[string]string)
 	this.querys[key] = value
 	return this
 }
 
 // Domain add some host name to a new route
-func Domain(s ...string) *route {
-	this := new(route)
+func Domain(s ...string) *Route {
+	this := new(Route)
 	this.domains = append(this.domains, s...)
 	return this
 }
 
 // Header add some request header pair to a new route
-func Header(key, value string) *route {
-	this := new(route)
+func Header(key, value string) *Route {
+	this := new(Route)
 	this.headers = make(map[string]string)
 	this.headers[key] = value
 	return this
@@ -209,7 +209,7 @@ func Header(key, value string) *route {
 // Func will build a empty url route "/" and registe it into global route-function map,
 // this function may just be called one time
 func Func(function func(*Ctx)) {
-	this := new(route)
+	this := new(Route)
 	newRoute := *this
 	routeFuncMap[&newRoute] = function
 }
@@ -219,67 +219,67 @@ func Func(function func(*Ctx)) {
 // ----------------------------------------------------------------------------
 
 // P alias to Path
-func (this *route) P(s ...string) *route {
+func (this *Route) P(s ...string) *Route {
 	return this.Path(s...)
 }
 
 // M alias to Method
-func (this *route) M(s ...string) *route {
+func (this *Route) M(s ...string) *Route {
 	return this.Method(s...)
 }
 
 // E alias to Ext
-func (this *route) E(s ...string) *route {
+func (this *Route) E(s ...string) *Route {
 	return this.Ext(s...)
 }
 
 // Q alias to Query
-func (this *route) Q(key, value string) *route {
+func (this *Route) Q(key, value string) *Route {
 	return this.Query(key, value)
 }
 
 // D alias to Domain
-func (this *route) D(s ...string) *route {
+func (this *Route) D(s ...string) *Route {
 	return this.Domain(s...)
 }
 
 // H alias to Header
-func (this *route) H(key, value string) *route {
+func (this *Route) H(key, value string) *Route {
 	return this.Header(key, value)
 }
 
 // F alias Func
-func (this *route) F(function func(*Ctx)) {
+func (this *Route) F(function func(*Ctx)) {
 	this.Func(function)
 }
 
 // P alias to Path
-func P(s ...string) *route {
+func P(s ...string) *Route {
 	return Path(s...)
 }
 
 // M alias to Method
-func M(s ...string) *route {
+func M(s ...string) *Route {
 	return Method(s...)
 }
 
 // E alias to Ext
-func E(s ...string) *route {
+func E(s ...string) *Route {
 	return Ext(s...)
 }
 
 // Q alias to Query
-func Q(key, value string) *route {
+func Q(key, value string) *Route {
 	return Query(key, value)
 }
 
 // D alias to Domain
-func D(s ...string) *route {
+func D(s ...string) *Route {
 	return Domain(s...)
 }
 
 // H alias to Header
-func H(key, value string) *route {
+func H(key, value string) *Route {
 	return Header(key, value)
 }
 

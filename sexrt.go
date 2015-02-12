@@ -84,7 +84,7 @@ func parseRequest(r *http.Request) (paths []string, method, ext, domain string, 
 }
 
 // isMatch check the request is match a route in global route-function map
-func isMatch(rt *route, paths []string, method, ext, domain string, querys, headers map[string][]string) (yes bool, args map[string]string) {
+func isMatch(rt *Route, paths []string, method, ext, domain string, querys, headers map[string][]string) (yes bool, args map[string]string) {
 	args = make(map[string]string)
 
 	// check paths

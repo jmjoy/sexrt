@@ -61,7 +61,7 @@ func NewMuxWithHandler(notFoundHandler routeHandler, errorHandler func(error)) *
 		}
 
 		// get handler and regexp args of a matchesd route
-		fn := this.matchRoute(ctx)
+		fn := mux.matchRoute(ctx)
 
 		if err := fn(ctx); err != nil {
 			mux.errorHandler(err)
@@ -100,51 +100,34 @@ func (mux *Mux) matchRoute(ctx *Ctx) routeHandler {
 	return mux.notFoundHandler
 }
 
-// parseRequest parse all need arugments for match route
-func parseRequest(r *http.Request) (paths []string, method, ext, domain string, querys, headers map[string][]string) {
-
-	// method
-	method = r.Method
-
-	// domain, actually host
-	domain = r.Host
-
-	// querys
-	querys = r.URL.Query()
-
-	// headers
-	headers = r.Header
-
-	return
-}
-
 // isRouteMatch check the request is match a route in global route-function map
-func isRouteMatch(rt *Route, ctx *Ctx) bool {
+func isRouteMatch(rt *Route, ctx *Ctx) (is bool) {
 	r := ctx.R
+	args := ctx.Args
 
+	// check method
+	if len(rt.methods) > 0 {
+		if !isSliceMatch(rt.methods, r.Method, args) {
+			return
+		}
+	}
+
+	// check host
+	if len(rt.hosts) > 0 {
+		if !isSliceMatch(rt.hosts, r.Host, args) {
+			return
+		}
+	}
+
+	// parse paths and ext
 	paths, ext := getPathsAndExt(r.URL)
-
-	args = make(map[string]string)
 
 	// check paths
 	if len(rt.paths) != len(paths) {
 		return
 	}
 	for i := range rt.paths {
-		y, key, value := isSingleMatch(rt.paths[i], paths[i])
-		// validate failed
-		if !y {
-			return
-		}
-		// success once
-		if key != "" {
-			args[key] = value
-		}
-	}
-
-	// check method
-	if len(rt.methods) > 0 {
-		if !isSliceMatch(rt.methods, method, args) {
+		if !isSingleMatch(rt.paths[i], paths[i], args) {
 			return
 		}
 	}
@@ -156,106 +139,75 @@ func isRouteMatch(rt *Route, ctx *Ctx) bool {
 		}
 	}
 
-	// check domain
-	if len(rt.domains) > 0 {
-		if !isSliceMatch(rt.domains, domain, args) {
-			return
-		}
-	}
-
 	// check querys
 	if len(rt.querys) > 0 {
-		if !isMapMatch(rt.querys, querys, args) {
+		if !isMapMatch(rt.querys, r.URL.Query(), args) {
 			return
 		}
 	}
 
 	// check headers
 	if len(rt.headers) > 0 {
-		if !isMapMatch(rt.headers, headers, args) {
+		if !isMapMatch(rt.headers, r.Header, args) {
 			return
 		}
 	}
 
-	yes = true
-	return
+	return true
 }
 
 // isSingleMatch use "==" or regexp to validate a single argument of request is match or not
-func isSingleMatch(rtArg, reqArg string, args map[string]string) bool {
-	if !strings.HasPrefix(rtArg, "{") || !strings.HasSuffix(rtArg, "}") {
-		// common validate
-		return rtArg == reqArg
-	}
+func isSingleMatch(item interface{}, single string, args map[string]string) bool {
+	switch item.(type) {
+	case string:
+		return single == item.(string)
 
-	// use regexp to validate
-	rtArg = rtArg[1 : len(rtArg)-1]
+	case *regexp.Regexp:
+		return item.(*regexp.Regexp).MatchString(single)
 
-	// check the ":" is not at the first or last position
-	if index := strings.Index(rtArg, ":"); index > 0 && index < len(rtArg)-1 {
-		// get regexp
-		regStr := rtArg[index+1:]
-		reg := regexp.MustCompile(regStr)
+	case *namedRegexp:
+		nr := item.(*namedRegexp)
 
-		// regexp validate success
-		if reg.MatchString(reqArg) {
-			yes = true
-			key = rtArg[:index]
-			value = reqArg
-			return
+		if !nr.MatchString(single) {
+			return false
 		}
-		// regexp validate failed
-		return
+		args[nr.Name] = single
+		return true
 
-		// don't contain ":", means it doesn't need to save in Args
-	} else if index == -1 {
-		reg := regexp.MustCompile(rtArg)
-		yes = reg.MatchString(reqArg)
-		return
+	default:
+		panic("Unknow type of slice item")
 	}
-
 }
 
 // isSliceMatch check if one item in the route is the request argument
-func isSliceMatch(slice []string, single string, args map[string]string) bool {
-	for i := range slice {
-		if y, key, value := isSingleMatch(slice[i], single); y {
-			// success, has one item match
-			if key != "" {
-				args[key] = value
-			}
+func isSliceMatch(rtSlice []interface{}, single string, args map[string]string) bool {
+	for i := range rtSlice {
+		if isSingleMatch(rtSlice[i], single, args) {
 			return true
 		}
-
 	}
-	// failed
 	return false
 }
 
-// isMapMatch check if all map key of route are exists in request map , and at most one item of value(slice) is match the route
-func isMapMatch(rtMap map[string]string, reqMap map[string][]string, args map[string]string) bool {
-	// use to count the success counts
-	flag := 0
-roop:
+// isMapMatch check if all map key of route are exists in request map, and at most one item of value(slice) is match the route
+func isMapMatch(rtMap map[string][]interface{}, reqMap map[string][]string, args map[string]string) bool {
+loop:
 	for k := range rtMap {
 		slice, ok := reqMap[k]
 		if !ok {
 			return false
 		}
+
 		for i := range slice {
-			if y, key, value := isSingleMatch(rtMap[k], slice[i]); y {
-				// success, has one item match
-				if key != "" {
-					args[key] = value
-				}
-				flag++
-				continue roop
+			if isSliceMatch(rtMap[k], slice[i], args) {
+				continue loop
 			}
 		}
+
+		return false
 	}
 
-	// success or not
-	return flag == len(rtMap)
+	return true
 }
 
 func getPathsAndExt(u *url.URL) (paths []string, ext string) {
@@ -264,7 +216,7 @@ func getPathsAndExt(u *url.URL) (paths []string, ext string) {
 	// remove empty
 	paths = make([]string, 0, len(paths0))
 	for i := range paths0 {
-		if rawPaths[i] != "" {
+		if paths0[i] != "" {
 			paths = append(paths, paths0[i])
 		}
 	}

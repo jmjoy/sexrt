@@ -14,12 +14,12 @@ type namedRegexp struct {
 type Route struct {
 	mux *Mux
 
-	paths   []interface{}          // request.URL splits by "/" (e.g. "/hello/world" => ["hello", "world"])
-	methods []interface{}          // request Method (e.g. "GET", "POST", "PUT", "DELETE")
-	exts    []interface{}          // url extension (e.g. "html", "jpg", "pdf")
-	hosts   []interface{}          // the Host in request header
-	querys  map[string]interface{} // url querys pair (e.g. "?a=1" => [a: 1])
-	headers map[string]interface{} // request header pair (e.g. "Accept: XXX" => [Accept: XXX])
+	paths   []interface{}            // request.URL splits by "/" (e.g. "/hello/world" => ["hello", "world"])
+	methods []interface{}            // request Method (e.g. "GET", "POST", "PUT", "DELETE")
+	exts    []interface{}            // url extension (e.g. "html", "jpg", "pdf")
+	hosts   []interface{}            // the Host in request header
+	querys  map[string][]interface{} // url querys pair (e.g. "?a=1" => [a: 1])
+	headers map[string][]interface{} // request header pair (e.g. "Accept: XXX" => [Accept: XXX])
 }
 
 // Path add some url segment to a building route, the order is important
@@ -63,11 +63,11 @@ func (rt *Route) Ext(s ...string) *Route {
 // Query add some url querys pair to a building route
 func (rt *Route) Query(s ...string) *Route {
 	if rt.querys == nil {
-		rt.querys = make(map[string]interface{})
+		rt.querys = make(map[string][]interface{})
 	}
 
 	for i := 0; i < len(s); i += 2 {
-		rt.querys[s[i]] = parseAppendString(s[i+1])[0]
+		rt.querys[s[i]] = append(rt.querys[s[i]], parseAppendString(s[i+1])[0])
 	}
 
 	return rt
@@ -82,11 +82,11 @@ func (rt *Route) Host(s ...string) *Route {
 // Header add some request header pair to a building route
 func (rt *Route) Header(s ...string) *Route {
 	if rt.headers == nil {
-		rt.headers = make(map[string]interface{})
+		rt.headers = make(map[string][]interface{})
 	}
 
 	for i := 0; i < len(s); i += 2 {
-		rt.headers[s[i]] = parseAppendString(s[i+1])[0]
+		rt.headers[s[i]] = append(rt.headers[s[i]], parseAppendString(s[i+1])[0])
 	}
 
 	return rt
@@ -144,10 +144,10 @@ func cloneRouteSlice(slice []interface{}) []interface{} {
 	return newSlice
 }
 
-func cloneRouteMap(m map[string]interface{}) map[string]interface{} {
-	newM := make(map[string]interface{}, len(m))
+func cloneRouteMap(m map[string][]interface{}) map[string][]interface{} {
+	newM := make(map[string][]interface{}, len(m))
 	for k, v := range m {
-		newM[k] = cloneRouteSingle(v)
+		newM[k] = append(v, cloneRouteSingle(v))
 	}
 	return newM
 }

@@ -101,25 +101,53 @@ func (rt *Route) Func(fn routeHandler) {
 func (rt *Route) clone() *Route {
 	return &Route{
 		mux:     rt.mux,
-		paths:   cloneStringSlice(rt.paths),
-		methods: cloneStringSlice(rt.methods),
-		exts:    cloneStringSlice(rt.exts),
-		hosts:   cloneStringSlice(rt.hosts),
-		querys:  cloneStringMap(rt.querys),
-		headers: cloneStringMap(rt.headers),
+		paths:   cloneRouteSlice(rt.paths),
+		methods: cloneRouteSlice(rt.methods),
+		exts:    cloneRouteSlice(rt.exts),
+		hosts:   cloneRouteSlice(rt.hosts),
+		querys:  cloneRouteMap(rt.querys),
+		headers: cloneRouteMap(rt.headers),
 	}
 }
 
-func cloneStringSlice(slice []string) []string {
-	newSlice := make([]string, 0, len(slice))
-	copy(newSlice, slice)
+func cloneRouteSingle(item interface{}) (newItem interface{}) {
+	switch item.(type) {
+	case string:
+		newItem = item.(string)
+
+	case *regexp.Regexp:
+		reg := *(item.(*regexp.Regexp))
+		newItem = &reg
+
+	case *namedRegexp:
+		nr := item.(*namedRegexp)
+		reg := *nr.Regexp
+		newItem = &namedRegexp{
+			Name:   nr.Name,
+			Regexp: &reg,
+		}
+
+	default:
+		panic("Unknow type of slice item")
+	}
+
+	return
+}
+
+func cloneRouteSlice(slice []interface{}) []interface{} {
+	newSlice := make([]interface{}, 0, len(slice))
+
+	for _, item := range slice {
+		newSlice = append(newSlice, cloneRouteSingle(item))
+	}
+
 	return newSlice
 }
 
-func cloneStringMap(m map[string]string) map[string]string {
-	newM := make(map[string]string, len(m))
+func cloneRouteMap(m map[string]interface{}) map[string]interface{} {
+	newM := make(map[string]interface{}, len(m))
 	for k, v := range m {
-		newM[k] = v
+		newM[k] = cloneRouteSingle(v)
 	}
 	return newM
 }
@@ -141,7 +169,7 @@ func parseAppendString(s ...string) []interface{} {
 		// check the ":" is not at the first or last position
 		if index := strings.Index(str, ":"); index > 0 && index < len(str)-1 {
 			// named regexp string
-			newSlice = append(newSlice, namedRegexp{
+			newSlice = append(newSlice, &namedRegexp{
 				Name:   str[:index],
 				Regexp: regexp.MustCompile(str[index+1:]),
 			})

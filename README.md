@@ -1,6 +1,6 @@
 #Sexrt
 
-Sexrt is a sexy HTTP router for golang, the design inspiration is origin to gorilla/mux:
+Sexrt is a sexy HTTP router for golang, inspired by gorilla/mux:
 
 https://github.com/gorilla/mux
 

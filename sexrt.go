@@ -7,24 +7,73 @@ import (
 	"strings"
 )
 
-// Ctx is just a little Context contains regexp successed arguments
+type routeHandler func(*Ctx) error
+
+// Ctx is a Context contains http request, response and regexp arguments.
 type Ctx struct {
-	Req  *http.Request
+	R    *http.Request
 	W    http.ResponseWriter
-	Args map[string]string // regexp successed arguments
+	Args map[string]string // regexp arguments
 }
 
-// Use registe the sexrt route handler to "/"
-func Use() {
+// Mux is a http.Handler implementer
+type Mux struct {
+	*http.ServeMux
+	*Route
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	routeHandlerPool map[*Route]routeHandler
+	notFoundHandler  routeHandler
+	errorHandler     func(error)
+}
+
+// NewMuxWithHandler
+func NewMuxWithHandler(notFoundHandler routeHandler, errorHandler func(error)) *Mux {
+	if notFoundHandler == nil {
+		// default Not Found handler
+		notFoundHandler = func(ctx *Ctx) error {
+			http.NotFound(ctx.W, ctx.R)
+			return nil
+		}
+	}
+
+	if errorHandler == nil {
+		// default error handler
+		errorHandler = func(err error) {
+			panic(err)
+		}
+	}
+
+	mux := &Mux{
+		ServeMux:         http.NewServeMux(),
+		Route:            new(Route),
+		routeHandlerPool: make(map[*Route]routeHandler),
+		notFoundHandler:  notFoundHandler,
+		errorHandler:     errorHandler,
+	}
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		// get hanleFunc and regexp args of a matchesd route
-		f, args := matchRoute(r)
 
-		ctx := &Ctx{r, w, args}
-		f(ctx)
+		ctx := &Ctx{
+			R:    r,
+			W:    w,
+			Args: make(map[string]string),
+		}
+
+		fn, args := matchRoute(ctx)
+
+		fn(ctx)
 	})
 
+	return mux
+}
+
+func NewMux() *Mux {
+	return NewMuxWithHandler(nil, nil)
+}
+
+func (this *Mux) NewRoute() *Route {
+	return &Route{mux: this}
 }
 
 // matchRoute find a route which match the request

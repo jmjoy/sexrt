@@ -131,7 +131,7 @@ func isRouteMatch(rt *Route, ctx *Ctx) (is bool) {
 	}
 
 	// check extension
-	if len(rt.exts) > 0 {
+	if len(rt.exts) > 0 && len(paths) > 0 {
 		if !isSliceMatch(rt.exts, ext, args) {
 			return
 		}

@@ -1,7 +1,6 @@
 package sexrt
 
 import (
-	"fmt"
 	"reflect"
 	"regexp"
 	"testing"
@@ -168,8 +167,4 @@ func TestParseAppendString(t *testing.T) {
 	if !reflect.DeepEqual(result, testParsed0) {
 		t.Fatal("not equal")
 	}
-}
-
-func checkPointerEqual(p, p0 interface{}) bool {
-	return fmt.Sprintf("%p", p0) == fmt.Sprintf("%p", p)
 }

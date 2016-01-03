@@ -20,7 +20,6 @@ type Ctx struct {
 // Mux is a http.Handler implementer
 type Mux struct {
 	*http.ServeMux
-	*Route
 
 	routeHandlerPool map[*Route]routeHandler
 
@@ -47,7 +46,6 @@ func NewMuxWithHandler(notFoundHandler routeHandler, errorHandler func(error)) *
 
 	mux := &Mux{
 		ServeMux:         http.NewServeMux(),
-		Route:            new(Route),
 		routeHandlerPool: make(map[*Route]routeHandler),
 		notFoundHandler:  notFoundHandler,
 		errorHandler:     errorHandler,

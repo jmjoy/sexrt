@@ -135,6 +135,10 @@ func cloneRouteSingle(item interface{}) (newItem interface{}) {
 }
 
 func cloneRouteSlice(slice []interface{}) []interface{} {
+	if slice == nil {
+		return nil
+	}
+
 	newSlice := make([]interface{}, 0, len(slice))
 
 	for _, item := range slice {
@@ -145,9 +149,15 @@ func cloneRouteSlice(slice []interface{}) []interface{} {
 }
 
 func cloneRouteMap(m map[string][]interface{}) map[string][]interface{} {
+	if m == nil {
+		return nil
+	}
+
 	newM := make(map[string][]interface{}, len(m))
-	for k, v := range m {
-		newM[k] = append(v, cloneRouteSingle(v))
+	for k, slice := range m {
+		for _, item := range slice {
+			newM[k] = append(newM[k], cloneRouteSingle(item))
+		}
 	}
 	return newM
 }

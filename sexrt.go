@@ -27,7 +27,7 @@ type Mux struct {
 	errorHandler    func(error)
 }
 
-// NewMuxWithHandler
+// NewMuxWithHandler will new a Mux witch user defined not found and error handler
 func NewMuxWithHandler(notFoundHandler routeHandler, errorHandler func(error)) *Mux {
 	if notFoundHandler == nil {
 		// default Not Found handler
@@ -69,18 +69,22 @@ func NewMuxWithHandler(notFoundHandler routeHandler, errorHandler func(error)) *
 	return mux
 }
 
+// NewMux will new a default Mux
 func NewMux() *Mux {
 	return NewMuxWithHandler(nil, nil)
 }
 
+// NewRoute will new a Route which relative to this Mux
 func (mux *Mux) NewRoute() *Route {
 	return &Route{mux: mux}
 }
 
+// HandleNotFound will set user defined not found handler to this Mux
 func (mux *Mux) HandleNotFound(notFoundHandler routeHandler) {
 	mux.notFoundHandler = notFoundHandler
 }
 
+// HandleError will set user defined error handler to this Mux
 func (mux *Mux) HandleError(errorHandler func(error)) {
 	mux.errorHandler = errorHandler
 }

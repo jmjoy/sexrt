@@ -124,6 +124,16 @@ func TestMuxRouteExt(t *testing.T) {
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
+	rt.Ext("").Path("index").Func(testHandler)
+
+	u := srv.URL + "/index.html"
+	testHTTPResponse("GET", u, "", func(body string, resp *http.Response) {
+		if resp.StatusCode != 404 {
+			t.Fatal(u + ": can found?!")
+		}
+	})
+
+	rt = mux.NewRoute()
 	rt.Ext("html").Func(testHandler)
 
 	testHTTPResponse("GET", srv.URL, "", func(body string, resp *http.Response) {
@@ -146,7 +156,7 @@ func TestMuxRouteExt(t *testing.T) {
 		})
 	}
 
-	u := srv.URL + "/hello.txt"
+	u = srv.URL + "/hello.txt"
 	testHTTPResponse("GET", u, "", func(body string, resp *http.Response) {
 		if resp.StatusCode != 404 {
 			t.Fatal(u + ": can found?!")

@@ -10,7 +10,7 @@ type namedRegexp struct {
 	*regexp.Regexp
 }
 
-// Route is a rule for matching a request
+// Route is a set of rules for matching a request
 type Route struct {
 	mux *Mux
 

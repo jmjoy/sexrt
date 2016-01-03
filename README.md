@@ -1,10 +1,11 @@
-#Sexrt
+Sexrt [![GoDoc](https://godoc.org/github.com/boltdb/bolt?status.png)](https://godoc.org/github.com/boltdb/bolt)
+====
 
 Sexrt is a sexy HTTP router for golang, inspired by gorilla/mux:
 
 https://github.com/gorilla/mux
 
-##Get started
+## Get started
 
 To install:
 
@@ -16,109 +17,65 @@ Take a try:
 package main
 
 import (
-  "fmt"
-  "github.com/jmjoy/sexrt"
-  "net/http"
+	"io"
+	"net/http"
+
+	"github.com/jmjoy/sexrt"
 )
 
 func main() {
-  sexrt.Path("index").Get().Func(func(ctx *sexrt.Ctx) {
-    fmt.Fprintln(ctx.W, "Hello world")
-  })
-
-  sexrt.Use()
-
-  http.ListenAndServe(":8080", nil)
+	mux := sexrt.NewMux()
+	mux.NewRoute().Func(func(ctx *sexrt.Ctx) error {
+		_, err := io.WriteString(ctx.W, "Hello, world!")
+		return err
+	})
+	http.ListenAndServe(":8080", mux)
 }
 ```
 
-Now, you can visit it: [http://localhost:8080/index]( "http://localhost:8080/index")
+## Usage
 
-not only, you also can via [http://localhost:8080/index.html]( "http://localhost:8080/index.html") or
-[http://localhost:8080/index.pdf]( "http://localhost:8080/index.pdf") or ... to visit it
+```go
+mux := sexrt.NewMux()
+rt := mux.NewRoute()
+fn := func(ctx *Ctx) error {
+    _, err := io.WriteString(ctx.W, "hello:"+ctx.Args["name"])
+    return err
+}
+rt.Path("name", `{name:\w+}`).Func(fn)
+// or: rt.Path("name").Path(`{name:\w+}`).Func(fn)
+```
+
+Visit: http://localhost:8080/user/foo
+
+Will return: hello:foo
+
+The argument surround with `{}` means it use regexp, like `{\d+}` matches some numbers,
+if you want to save the matched string, use `{<name>:<regexp>}`, than the matched string will be stored in ctx.Args
+
+You can also visit it by: http://localhost:8080/user/foo.html or http://localhost:8080/user/foo.txt and so on...
 
 if you don't like the extension, you can do it simply:
 
 ```go
-sexrt.Path("index").Get().Ext("").Func(func(ctx *sexrt.Ctx) {
-  fmt.Fprintln(ctx.W, "Hello world")
-})
+rt.Path("name", `{name:\w+}`).Ext("").Func(fn)
 ```
 
-or add Ext() some arguments if you want to specify the extension.
-
-if you love, you can use the "shorthand style", just like this:
+## More example
 
 ```go
-sexrt.P("index").E("").F(func(ctx *sexrt.Ctx) {
-  fmt.Fprintln(ctx.W, "Hello world")
-})
+// all suport chain method
+rt.Path("foo", "bar").
+    Method("GET", "POST").
+    Ext("html", "txt").
+    Host("localhost", "localhost:8080").
+    Query("id", `{id:^\d+$}`, "name", `{name:^\w+$}`).
+    Header("Accept", `{html}`, "Accept", `{\*/\*}`).
+    Func(fn)
+
+// RESTful
+rt.Get()    // same as sexrt.Method("GET")
+rt.Post()   // same as sexrt.Method("POST")
+rt.Put()    // same as sexrt.Method("PUT")
+rt.Delete() // same as sexrt.Method("DELETE")
 ```
-
-if you want more url segments, you can do:
-
-```go
-sexrt.P("home", "user", "info").F(whatFunc)
-```
-
-or use "chain style":
-
-```go
-sexrt.P("home").P("user").P("info").F(whatFunc)
-```
-[http://localhost:8080/home/user/info]( "http://localhost:8080/home/user/info")
-
-many times, you would need to use a regexp to match a url:
-
-```go
-sexrt.P("home").P(`{^\d+$}`).F(whatFunc)
-```
-
-the argument surround with `{}` means it use regexp, if you want to save the matched string:
-
-```go
-sexrt.P("home").P(`{id:^\d+$}`).F(func(ctx *sexrt.Ctx) {
-  fmt.Fprintf(ctx.W, "%#v", ctx.Args)
-})
-```
-
-than you can get the string via "sexrt.Ctx.Args"
-
-##More example
-
-```go
-whatFunc := func(ctx *sexrt.Ctx) {}
-
-// all suport Validate Functions
-sexrt.Path("edit").Method("POST").Ext("html").
-    Domain("localhost").Query("id", `{id:^\d+$}`).
-    Header("Accept", `{html}`).Func(whatFunc)
-
-// all suport Validate Functions' shorthand
-sexrt.P("edit").M("POST").E("html").
-    D("localhost").Q("id", `{id:^\d+$}`).
-    H("Accept", `{html}`).F(whatFunc)
-
-// HomePage
-sexrt.F(whatFunc)
-
-// sub router
-article := sexrt.Get().P("article")
-article.P("add").F(whatFunc)
-article.P("del").F(whatFunc)
-
-// Restful route
-sexrt.Get() // same as sexrt.Method("GET")
-sexrt.Post() // same as sexrt.Method("POST")
-sexrt.Put() // same as sexrt.Method("PUT")
-sexrt.Delete() // same as sexrt.Method("DELETE")
-
-// not found handle function
-nfFunc := func(ctx *sexrt.Ctx) {}
-sexrt.NotFunc(nfFunc)
-sexrt.NF(nfFunc)
-```
-
-##Reference
-
-https://godoc.org/?q=github.com%2Fjmjoy%2Fsexrt

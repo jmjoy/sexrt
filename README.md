@@ -1,4 +1,4 @@
-Sexrt [![GoDoc](https://godoc.org/github.com/boltdb/bolt?status.png)](https://godoc.org/github.com/boltdb/bolt)
+Sexrt [![GoDoc](https://godoc.org/github.com/jmjoy/sexrt?status.png)](https://godoc.org/github.com/jmjoy/sexrt)
 ====
 
 Sexrt is a sexy HTTP router for golang, inspired by gorilla/mux:
